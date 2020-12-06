@@ -1,20 +1,10 @@
-# dynamic form
-对客户端原生做一个动态的表单下发，表单类型如下：
-
-- 文本类型：客户端需传值string
-- 纯数字：客户端需int转string提交
-- 长文本：客户端需点击跳转至长文本编辑界面，并传值string
-- 图片：客户端需调用上传接口，并传值string（图片url或其它标识）
-- 日期：客户端需创建日期选择交互，并传值int转string（时间戳）
-- 单选框：客户端需做单选框交互，并传值选择结果ID转string
-- 复选框：客户端需做复选框交互，并传值选择结果列表转json string
-- 子级输入框列表：客户端需点击跳转至子级输入框列表，传值根据各个子级类型而定
-
-## 实现目标
-实现一个通用的、各个业务均可直接调用的表单下发方案。存储在数据表中，区分不同业务ID及模块ID进行分别下发。
-业务ID由具体实现接口传递，模块ID由客户端传递，表单下发服务具体提供以下参数：
-```go
 package formsvc
+
+// tDepth 表单深度
+type tDepth = int
+// tParentID 表单父级ID
+type tParentID = uint64
+
 // check_type字段：校验用户输入类型(新类型从最后一行追加)
 const (
 	CheckTypeNull  = iota // 无
@@ -82,40 +72,19 @@ type FormConfigItem struct {
 	SubCountry *SubCountry       `json:"sub_country"`
 	SubInput   []*FormConfigItem `json:"sub_input"`
 }
-```
 
-## 具体交互
-客户端请求具体不同业务的表单下发接口，携带自身业务的business_id(业务ID)、module_id(同一业务下的模块ID)，而showcase_id由服务端根据不同业务区分下发。
-客户端进行表单提交时，取各个输入框的ID与input_type对应的传值，form表单内为自定义字段和items字段(多项map构成的数组json序列化后提交)，如：
-```json
-{
-    "id":123,
-    "items":[
-        {
-            "id":1,
-            "data":"3500"
-        },
-        {
-            "id":2,
-            "data":"800"
-        },
-        {
-            "id":3,
-            "data":"969520393"
-        },
-        {
-            "id":4,
-            "data":"caoyang@stary.itd"
-        },
-        {
-            "id":5,
-            "data":"xxddww"
-        },
-        {
-            "id":6,
-            "data":"www.dreame.com"
-        }
-    ]
+// FormConfigItems 结果
+type FormConfigItems []*FormConfigItem
+
+// SubmitFormItem 表单提交元素
+type SubmitFormItem struct {
+	ID   uint64	`json:"id"`
+	Data string	`json:"data"`
 }
-```
-数据表设计见sql目录
+
+// SubmitFormItems 表单提交数据
+type SubmitFormItems []*SubmitFormItem
+
+var inputTypeCheckFieldNameMap = map[int]string{
+	InputTypeSdEmail: "_check_code",
+}
